@@ -1,0 +1,2 @@
+# cat=basic//1; type=text; label=Static TSConfig Path: Path (relative to TYPO3 root) of any Static TSConfig
+tx_bnbackend_tsconfig_file_path = fileadmin/Configuration/Site/Default/Configuration/UserTSConfig/
