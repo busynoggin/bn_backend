@@ -34,6 +34,12 @@ class tx_bnbackend_lib {
 
 			$staticTSConfigFiles = t3lib_div::trimExplode(',', $groupRow['tx_bnbackend_tsconfig_files']);
 			foreach($staticTSConfigFiles as $staticTSConfigFile) {
+				// If we're including site config, include corresponding base config.
+				if (self::isPathWithinSiteStaticTSConfigPath($staticTSConfigFile) && self::hasBaseConfiguration($staticTSConfigFile)) {
+					$staticTSConfigFileFromBase = self::getBaseConfiguration($staticTSConfigFile);
+					$parentObject->TSdataArray[] = '<INCLUDE_TYPOSCRIPT: source="FILE:' . $staticTSConfigFileFromBase . '">';
+				}
+
 				$parentObject->TSdataArray[] = '<INCLUDE_TYPOSCRIPT: source="FILE:' . $staticTSConfigFile . '">';
 			}
 
@@ -49,18 +55,77 @@ class tx_bnbackend_lib {
 	 * @return array
 	 */
 	public static function getStaticTSConfigItemsForGroup(&$params, &$parentObject) {
-		$relativeConfigurationPath = self::getStaticTSConfigPath();
-		$absoluteConfigurationPath = PATH_site . '/' . $relativeConfigurationPath;
+		if (!is_array($params['items'])) {
+			$params['items'] = array();
+		}
 
-		$configurations = t3lib_div::getFilesInDir($absoluteConfigurationPath, 'ts');
-		foreach ($configurations as $configurationName) {
-			$itemArray = self::addStaticTSConfigFromPath($relativeConfigurationPath, $configurationName);
+		$baseItems = self::getStaticTSConfigItemsFromBase();
+		$siteItems = self::getStaticTSConfigItemsFromSite();
+		$mergedItems = $baseItems;
+		foreach ($siteItems['items'] as $key => $item) {
+			$mergedItems['items'][] = $item;
+		}
+
+		usort($mergedItems['items'], function($a, $b) {
+			return $a[0] > $b[0];
+		});
+
+		$params['items'] = $mergedItems['items'];
+	}
+
+	/**
+	 * Gets the items array from the base configuration path.
+	 *
+	 * @return array
+	 */
+	protected static function getStaticTSConfigItemsFromBase() {
+		$basePath = self::getBaseStaticTSConfigPath();
+		return self::getStaticTSConfigItemsFromPath($basePath);
+	}
+
+	/**
+	 * Gets the items array from the site configuration path
+	 *
+	 * @return array
+	 */
+	protected static function getStaticTSConfigItemsFromSite() {
+		$sitePath = self::getSiteStaticTSConfigPath();
+		return self::getStaticTSConfigItemsFromPath($sitePath);
+	}
+
+	/**
+	 * Gets the items array from the specified path
+	 *
+	 * @param string $path
+	 * @return array
+	 */
+	protected static function getStaticTSConfigItemsFromPath($path) {
+		$configurationKey = 'Default';
+		$pathToTSConfigFiles = $path . $configurationKey . '/Configuration/UserTSConfig/';
+		$configurations = t3lib_div::getFilesInDir(PATH_site . $pathToTSConfigFiles, 'ts');
+		foreach ($configurations as $configurationFilename) {
+			$itemArray = self::addStaticTSConfigFromPath($pathToTSConfigFiles, $configurationFilename, $configurationKey);
 			if ($itemArray) {
 				$params['items'][] = $itemArray;
 			}
 		}
 
-		return $params['items'];
+		// Loop over all the folders within the configuration, typically extension-based names
+		$pathToExtensions = $path . 'Extensions/';
+		$configurationFolders = t3lib_div::get_dirs(PATH_site . $pathToExtensions);
+		foreach ($configurationFolders as $configurationFolderName) {
+			// Within a folder, look for /UserTSConfig/*.ts and add it as a static template.
+			$pathToTSConfigFiles = $pathToExtensions . $configurationFolderName . '/Configuration/UserTSConfig/';
+			$configurations = t3lib_div::getFilesInDir(PATH_site . $pathToTSConfigFiles, 'ts');
+			foreach ($configurations as $configurationFilename) {
+				$itemArray = self::addStaticTSConfigFromPath($pathToTSConfigFiles, $configurationFilename, $configurationFolderName);
+				if ($itemArray) {
+					$params['items'][] = $itemArray;
+				}
+			}
+		}
+
+		return $params;
 	}
 
 	/**
@@ -68,15 +133,21 @@ class tx_bnbackend_lib {
 	 *
 	 * @param string $path
 	 * @param string $filename
+	 * @param string $configurationKey
 	 * @return array
 	 */
-	public static function addStaticTSConfigFromPath($path, $filename) {
+	protected static function addStaticTSConfigFromPath($path, $filename, $configurationKey) {
 			$info = pathinfo($filename);
 			$name = basename($filename,'.'.$info['extension']);
-			$name = preg_replace('/(?<=\\w)(?=[A-Z])/', ' $1', $name);
-			$name = trim($name);
+			$name = $configurationKey . '/' . trim($name);
 
-			$itemArray = array('Busy Noggin: ' . $name, $path . $filename);
+			if (self::isPathWithinSiteStaticTSConfigPath($path)) {
+				$name .= ' (Site)';
+			} elseif (self::isPathWithinBaseStaticTSConfigPath($path)) {
+				$name .= ' (Base)';
+			}
+
+			$itemArray = array($name, $path . $filename);
 			return $itemArray;
 	}
 
@@ -85,12 +156,66 @@ class tx_bnbackend_lib {
 	 *
 	 * @return string
 	 */
-	public static function getStaticTSConfigPath() {
+	protected static function getSiteStaticTSConfigPath() {
 		$extConf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['bn_backend']);
-		return $extConf['tx_bnbackend_tsconfig_file_path'];
+		return $extConf['siteConfigurationPath'];
+	}
+
+	/**
+	 * Checks if the given path is within the site static TSConfig path
+	 *
+	 * @param string $path
+	 * @return boolean
+	 */
+	protected static function isPathWithinSiteStaticTSConfigPath($path) {
+		$siteStaticTSConfigPath = self::getSiteStaticTSConfigPath();
+		return (strstr($path, $siteStaticTSConfigPath) !== FALSE);
+	}
+
+	/**
+	 * Gets the static TSConfig path
+	 *
+	 * @return string
+	 */
+	protected static function getBaseStaticTSConfigPath() {
+		$extConf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['bn_backend']);
+		return $extConf['baseConfigurationPath'];
+	}
+
+	/**
+	 * Checks if the given path is within the base static TSConfig path
+	 *
+	 * @param string $path
+	 * @return boolean
+	 */
+	protected static function isPathWithinBaseStaticTSConfigPath($path) {
+		$baseStaticTSConfigPath = self::getBaseStaticTSConfigPath();
+		return (strstr($path, $baseStaticTSConfigPath) !== FALSE);
+	}
+
+	/**
+	 * Checks if the given path has a corresponding base configuration.
+	 *
+	 * @param string $staticTSConfigFile
+	 * @return boolean
+	 */
+	protected static function hasBaseConfiguration($staticTSConfigFile) {
+		return @is_file(PATH_site . self::getBaseConfiguration($staticTSConfigFile));
+	}
+
+	/**
+	 * Gets the corresponding base configuration.
+	 *
+	 * @param string $staticTSConfigFile
+	 * @return boolean
+	 */
+	protected static function getBaseConfiguration($staticTSConfigFile) {
+		$siteStaticTSConfigPath = self::getSiteStaticTSConfigPath();
+		$baseStaticTSConfigPath = self::getBaseStaticTSConfigPath();
+
+		$baseFile = str_replace($siteStaticTSConfigPath, $baseStaticTSConfigPath, $staticTSConfigFile);
+		return $baseFile;
 	}
 }
-
-class user_bnbackend_lib extends tx_bnbackend_lib {}
 
 ?>
