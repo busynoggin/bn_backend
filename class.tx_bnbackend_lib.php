@@ -33,7 +33,7 @@ class tx_bnbackend_lib {
 			$lastTSConfig = array_pop($parentObject->TSdataArray);
 
 			$staticTSConfigFiles = t3lib_div::trimExplode(',', $groupRow['tx_bnbackend_tsconfig_files']);
-			foreach($staticTSConfigFiles as $staticTSConfigFile) {
+			foreach((array) $staticTSConfigFiles as $staticTSConfigFile) {
 				// If we're including site config, include corresponding base config.
 				if (self::isPathWithinSiteStaticTSConfigPath($staticTSConfigFile) && self::hasBaseConfiguration($staticTSConfigFile)) {
 					$staticTSConfigFileFromBase = self::getBaseConfiguration($staticTSConfigFile);
@@ -62,7 +62,7 @@ class tx_bnbackend_lib {
 		$baseItems = self::getStaticTSConfigItemsFromBase();
 		$siteItems = self::getStaticTSConfigItemsFromSite();
 		$mergedItems = $baseItems;
-		foreach ($siteItems['items'] as $key => $item) {
+		foreach ((array) $siteItems['items'] as $key => $item) {
 			$mergedItems['items'][] = $item;
 		}
 
@@ -103,7 +103,7 @@ class tx_bnbackend_lib {
 		$configurationKey = 'Default';
 		$pathToTSConfigFiles = $path . $configurationKey . '/Configuration/UserTSConfig/';
 		$configurations = t3lib_div::getFilesInDir(PATH_site . $pathToTSConfigFiles, 'ts');
-		foreach ($configurations as $configurationFilename) {
+		foreach ((array) $configurations as $configurationFilename) {
 			$itemArray = self::addStaticTSConfigFromPath($pathToTSConfigFiles, $configurationFilename, $configurationKey);
 			if ($itemArray) {
 				$params['items'][] = $itemArray;
@@ -113,11 +113,11 @@ class tx_bnbackend_lib {
 		// Loop over all the folders within the configuration, typically extension-based names
 		$pathToExtensions = $path . 'Extensions/';
 		$configurationFolders = t3lib_div::get_dirs(PATH_site . $pathToExtensions);
-		foreach ($configurationFolders as $configurationFolderName) {
+		foreach ((array) $configurationFolders as $configurationFolderName) {
 			// Within a folder, look for /UserTSConfig/*.ts and add it as a static template.
 			$pathToTSConfigFiles = $pathToExtensions . $configurationFolderName . '/Configuration/UserTSConfig/';
 			$configurations = t3lib_div::getFilesInDir(PATH_site . $pathToTSConfigFiles, 'ts');
-			foreach ($configurations as $configurationFilename) {
+			foreach ((array) $configurations as $configurationFilename) {
 				$itemArray = self::addStaticTSConfigFromPath($pathToTSConfigFiles, $configurationFilename, $configurationFolderName);
 				if ($itemArray) {
 					$params['items'][] = $itemArray;
