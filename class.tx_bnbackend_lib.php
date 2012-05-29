@@ -12,7 +12,7 @@ class tx_bnbackend_lib {
 			t3lib_div::loadTCA($tableName);
 			foreach ($tableConfiguration['columns'] as $columnName => $columnConfiguration) {
 				if (array_key_exists('exclude', $columnConfiguration) && $columnConfiguration['exclude']) {
-					unset($TCA[$tableName]['columns'][$columnName]['exclude']);
+					unset($GLOBALS['TCA'][$tableName]['columns'][$columnName]['exclude']);
 				}
 			}
 		}
