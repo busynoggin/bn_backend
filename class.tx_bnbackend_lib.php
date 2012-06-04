@@ -27,23 +27,24 @@ class tx_bnbackend_lib {
 	 */
 	public static function includeStaticTSConfigForGroups($params, &$parentObject) {
 		$user = $parentObject->user;
-		$groupId = end($parentObject->includeGroupArray);
-		$groupRow = $parentObject->userGroups[$groupId];
-		if ($groupRow['tx_bnbackend_tsconfig_files']) {
-			$lastTSConfig = array_pop($parentObject->TSdataArray);
+		foreach ($parentObject->includeGroupArray as $groupId) {
+			$groupRow = $parentObject->userGroups[$groupId];
+			if ($groupRow['tx_bnbackend_tsconfig_files']) {
+				$lastTSConfig = array_pop($parentObject->TSdataArray);
 
-			$staticTSConfigFiles = t3lib_div::trimExplode(',', $groupRow['tx_bnbackend_tsconfig_files']);
-			foreach((array) $staticTSConfigFiles as $staticTSConfigFile) {
-				// If we're including site config, include corresponding base config.
-				if (self::isPathWithinSiteStaticTSConfigPath($staticTSConfigFile) && self::hasBaseConfiguration($staticTSConfigFile)) {
-					$staticTSConfigFileFromBase = self::getBaseConfiguration($staticTSConfigFile);
-					$parentObject->TSdataArray[] = '<INCLUDE_TYPOSCRIPT: source="FILE:' . $staticTSConfigFileFromBase . '">';
+				$staticTSConfigFiles = t3lib_div::trimExplode(',', $groupRow['tx_bnbackend_tsconfig_files']);
+				foreach((array) $staticTSConfigFiles as $staticTSConfigFile) {
+					// If we're including site config, include corresponding base config.
+					if (self::isPathWithinSiteStaticTSConfigPath($staticTSConfigFile) && self::hasBaseConfiguration($staticTSConfigFile)) {
+						$staticTSConfigFileFromBase = self::getBaseConfiguration($staticTSConfigFile);
+						$parentObject->TSdataArray[] = '<INCLUDE_TYPOSCRIPT: source="FILE:' . $staticTSConfigFileFromBase . '">';
+					}
+
+					$parentObject->TSdataArray[] = '<INCLUDE_TYPOSCRIPT: source="FILE:' . $staticTSConfigFile . '">';
 				}
 
-				$parentObject->TSdataArray[] = '<INCLUDE_TYPOSCRIPT: source="FILE:' . $staticTSConfigFile . '">';
+				$parentObject->TSdataArray[] = $lastTSConfig;
 			}
-
-			$parentObject->TSdataArray[] = $lastTSConfig;
 		}
 	}
 
