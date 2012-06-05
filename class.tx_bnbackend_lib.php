@@ -27,6 +27,14 @@ class tx_bnbackend_lib {
 	 */
 	public static function includeStaticTSConfigForGroups($params, &$parentObject) {
 		$user = $parentObject->user;
+
+		// Force FlexForm fields to be allowed
+		if ($parentObject->groupData['non_exclude_fields']) {
+			$parentObject->groupData['non_exclude_fields'] .= ',pages:tx_templavoila_flex';
+		} else {
+			$parentObject->groupData['non_exclude_fields'] = 'pages:tx_templavoila_flex';
+		}
+
 		foreach ($parentObject->includeGroupArray as $groupId) {
 			$groupRow = $parentObject->userGroups[$groupId];
 			if ($groupRow['tx_bnbackend_tsconfig_files']) {
