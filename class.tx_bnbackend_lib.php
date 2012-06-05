@@ -16,6 +16,15 @@ class tx_bnbackend_lib {
 				}
 			}
 		}
+
+		// Force FlexForm fields to be allowed
+		if ($GLOBALS['BE_USER']) {
+			if ($GLOBALS['BE_USER']->groupData['non_exclude_fields']) {
+				$GLOBALS['BE_USER']->groupData['non_exclude_fields'] .= ',pages:tx_templavoila_flex';
+			} else {
+				$GLOBALS['BE_USER']->groupData['non_exclude_fields'] = 'pages:tx_templavoila_flex';
+			}
+		}
 	}
 
 	/**
