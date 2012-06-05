@@ -16,15 +16,6 @@ class tx_bnbackend_lib {
 				}
 			}
 		}
-
-		// Force FlexForm fields to be allowed
-		if ($GLOBALS['BE_USER']) {
-			if ($GLOBALS['BE_USER']->groupData['non_exclude_fields']) {
-				$GLOBALS['BE_USER']->groupData['non_exclude_fields'] .= ',pages:tx_templavoila_flex';
-			} else {
-				$GLOBALS['BE_USER']->groupData['non_exclude_fields'] = 'pages:tx_templavoila_flex';
-			}
-		}
 	}
 
 	/**
@@ -37,11 +28,14 @@ class tx_bnbackend_lib {
 	public static function includeStaticTSConfigForGroups($params, &$parentObject) {
 		$user = $parentObject->user;
 
-		// Force FlexForm fields to be allowed
-		if ($parentObject->groupData['non_exclude_fields']) {
-			$parentObject->groupData['non_exclude_fields'] .= ',pages:tx_templavoila_flex';
+		/**
+		 * Force FlexForm fields to be allowed. t3lib_userauthgroup specifically mentions that dataLists is for
+		 * internal use only so this may be brittle. It shouldn't break anything else, but may not work forever.
+		 */
+		if ($parentObject->dataLists['non_exclude_fields']) {
+			$parentObject->dataLists['non_exclude_fields'] .= ',pages:tx_templavoila_flex';
 		} else {
-			$parentObject->groupData['non_exclude_fields'] = 'pages:tx_templavoila_flex';
+			$parentObject->dataLists['non_exclude_fields'] = 'pages:tx_templavoila_flex';
 		}
 
 		foreach ($parentObject->includeGroupArray as $groupId) {
