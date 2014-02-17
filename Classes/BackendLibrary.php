@@ -1,6 +1,8 @@
 <?php
 
-class tx_bnbackend_lib {
+namespace BusyNoggin\BnBackend;
+
+class BackendLibrary {
 
 	/**
 	 * Removes all exclude fields as defined in the TCA. This does not currently handle FlexForm excludeFields (which are rare)
@@ -9,7 +11,11 @@ class tx_bnbackend_lib {
 	 */
 	public static function removeExcludeFields() {
 		foreach ($GLOBALS['TCA'] as $tableName => &$tableConfiguration) {
-			t3lib_div::loadTCA($tableName);
+
+			if (version_compare(TYPO3_branch, '6.1', '<')) {
+				\TYPO3\CMS\Core\Utility\GeneralUtility::loadTCA($tableName);
+			}
+
 			foreach ($tableConfiguration['columns'] as $columnName => $columnConfiguration) {
 				if (array_key_exists('exclude', $columnConfiguration) && $columnConfiguration['exclude']) {
 					unset($GLOBALS['TCA'][$tableName]['columns'][$columnName]['exclude']);
@@ -114,7 +120,7 @@ class tx_bnbackend_lib {
 	protected static function getStaticTSConfigItemsFromPath($path) {
 		$configurationKey = 'Default';
 		$pathToTSConfigFiles = $path . $configurationKey . '/Configuration/UserTSConfig/';
-		$configurations = t3lib_div::getFilesInDir(PATH_site . $pathToTSConfigFiles, 'ts');
+		$configurations = \TYPO3\CMS\Core\Utility\GeneralUtility::getFilesInDir(PATH_site . $pathToTSConfigFiles, 'ts');
 		foreach ((array) $configurations as $configurationFilename) {
 			$itemArray = self::addStaticTSConfigFromPath($pathToTSConfigFiles, $configurationFilename, $configurationKey);
 			if ($itemArray) {
@@ -124,11 +130,11 @@ class tx_bnbackend_lib {
 
 		// Loop over all the folders within the configuration, typically extension-based names
 		$pathToExtensions = $path . 'Extensions/';
-		$configurationFolders = t3lib_div::get_dirs(PATH_site . $pathToExtensions);
+		$configurationFolders = \TYPO3\CMS\Core\Utility\GeneralUtility(PATH_site . $pathToExtensions);
 		foreach ((array) $configurationFolders as $configurationFolderName) {
 			// Within a folder, look for /UserTSConfig/*.ts and add it as a static template.
 			$pathToTSConfigFiles = $pathToExtensions . $configurationFolderName . '/Configuration/UserTSConfig/';
-			$configurations = t3lib_div::getFilesInDir(PATH_site . $pathToTSConfigFiles, 'ts');
+			$configurations = \TYPO3\CMS\Core\Utility\GeneralUtility(PATH_site . $pathToTSConfigFiles, 'ts');
 			foreach ((array) $configurations as $configurationFilename) {
 				$itemArray = self::addStaticTSConfigFromPath($pathToTSConfigFiles, $configurationFilename, $configurationFolderName);
 				if ($itemArray) {

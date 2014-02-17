@@ -5,7 +5,7 @@ if (TYPO3_MODE === 'BE') {
 	$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauthgroup.php']['fetchGroups_postProcessing'][] = 'tx_bnbackend_lib->includeStaticTSConfigForGroups';
 
 	// Hide Allowed Exclude Fields within group record
-	t3lib_extMgm::addPageTSConfig('TCEFORM.be_groups.non_exclude_fields.disabled = 1');
+	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addPageTSConfig('TCEFORM.be_groups.non_exclude_fields.disabled = 1');
 }
 
 ?>
