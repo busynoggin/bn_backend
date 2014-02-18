@@ -1,7 +1,7 @@
 <?php
 
 if (TYPO3_MODE === 'BE') {
-	tx_bnbackend_lib::removeExcludeFields();
+	\BusyNoggin\BnBackend\BackendLibrary::removeExcludeFields();
 
 	// Define the TCA for the static TS Config selector
 	$staticTSConfigSelector = array(
@@ -16,10 +16,11 @@ if (TYPO3_MODE === 'BE') {
 		),
 	);
 
-	// Add the skin selector for backend users.
-	t3lib_div::loadTCA('be_groups');
-	t3lib_extMgm::addTCAcolumns('be_groups', $staticTSConfigSelector);
-	t3lib_extMgm::addToAllTCAtypes('be_groups', 'tx_bnbackend_tsconfig_files', '', 'before:TSconfig');
+	if (version_compare(TYPO3_branch, '6.1', '<')) {
+		\TYPO3\CMS\Core\Utility\GeneralUtility::loadTCA('be_groups');
+	}
+	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addTCAcolumns('be_groups', $staticTSConfigSelector);
+	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addToAllTCAtypes('be_groups', 'tx_bnbackend_tsconfig_files', '', 'before:TSconfig');
 }
 
 ?>
