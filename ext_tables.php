@@ -11,7 +11,7 @@ if (TYPO3_MODE === 'BE') {
 				'type' => 'select',
 				'size' => 5,
 				'maxitems' => 100,
-				'itemsProcFunc' => 'tx_bnbackend_lib->getStaticTSConfigItemsForGroup'
+				'itemsProcFunc' => 'BusyNoggin\\BnBackend\\BackendLibrary->getStaticTSConfigItemsForGroup'
 			)
 		),
 	);
