@@ -49,7 +49,7 @@ class BackendLibrary {
 			if ($groupRow['tx_bnbackend_tsconfig_files']) {
 				$lastTSConfig = array_pop($parentObject->TSdataArray);
 
-				$staticTSConfigFiles = t3lib_div::trimExplode(',', $groupRow['tx_bnbackend_tsconfig_files']);
+				$staticTSConfigFiles = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $groupRow['tx_bnbackend_tsconfig_files']);
 				foreach((array) $staticTSConfigFiles as $staticTSConfigFile) {
 					// If we're including site config, include corresponding base config.
 					if (self::isPathWithinSiteStaticTSConfigPath($staticTSConfigFile) && self::hasBaseConfiguration($staticTSConfigFile)) {
@@ -130,11 +130,11 @@ class BackendLibrary {
 
 		// Loop over all the folders within the configuration, typically extension-based names
 		$pathToExtensions = $path . 'Extensions/';
-		$configurationFolders = \TYPO3\CMS\Core\Utility\GeneralUtility(PATH_site . $pathToExtensions);
+		$configurationFolders = \TYPO3\CMS\Core\Utility\GeneralUtility::get_dirs(PATH_site . $pathToExtensions);
 		foreach ((array) $configurationFolders as $configurationFolderName) {
 			// Within a folder, look for /UserTSConfig/*.ts and add it as a static template.
 			$pathToTSConfigFiles = $pathToExtensions . $configurationFolderName . '/Configuration/UserTSConfig/';
-			$configurations = \TYPO3\CMS\Core\Utility\GeneralUtility(PATH_site . $pathToTSConfigFiles, 'ts');
+			$configurations = \TYPO3\CMS\Core\Utility\GeneralUtility::getFilesInDir(PATH_site . $pathToTSConfigFiles, 'ts');
 			foreach ((array) $configurations as $configurationFilename) {
 				$itemArray = self::addStaticTSConfigFromPath($pathToTSConfigFiles, $configurationFilename, $configurationFolderName);
 				if ($itemArray) {
