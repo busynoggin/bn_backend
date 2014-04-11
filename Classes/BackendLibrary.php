@@ -24,6 +24,14 @@ class BackendLibrary {
 		}
 	}
 
+	public static function removeInlineFileUpload() {
+		if (version_compare(TYPO3_branch, '6.1', '<')) {
+			\TYPO3\CMS\Core\Utility\GeneralUtility::loadTCA('sys_file_reference');
+		}
+
+		$GLOBALS['TCA']['sys_file_reference']['columns']['uid_local']['config']['appearance']['fileUploadAllowed'] = 0;
+	}
+
 	/**
 	 * Hooks into group handling to load TSConfig Static Templates.
 	 *

@@ -2,6 +2,7 @@
 
 if (TYPO3_MODE === 'BE') {
 	\BusyNoggin\BnBackend\BackendLibrary::removeExcludeFields();
+	\BusyNoggin\BnBackend\BackendLibrary::removeInlineFileUpload();
 
 	// Define the TCA for the static TS Config selector
 	$staticTSConfigSelector = array(
