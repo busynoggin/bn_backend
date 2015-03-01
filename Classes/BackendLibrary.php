@@ -11,11 +11,6 @@ class BackendLibrary {
 	 */
 	public static function removeExcludeFields() {
 		foreach ($GLOBALS['TCA'] as $tableName => &$tableConfiguration) {
-
-			if (version_compare(TYPO3_branch, '6.1', '<')) {
-				\TYPO3\CMS\Core\Utility\GeneralUtility::loadTCA($tableName);
-			}
-
 			foreach ($tableConfiguration['columns'] as $columnName => $columnConfiguration) {
 				if (array_key_exists('exclude', $columnConfiguration) && $columnConfiguration['exclude']) {
 					unset($GLOBALS['TCA'][$tableName]['columns'][$columnName]['exclude']);
@@ -25,10 +20,6 @@ class BackendLibrary {
 	}
 
 	public static function removeInlineFileUpload() {
-		if (version_compare(TYPO3_branch, '6.1', '<')) {
-			\TYPO3\CMS\Core\Utility\GeneralUtility::loadTCA('sys_file_reference');
-		}
-
 		$GLOBALS['TCA']['sys_file_reference']['columns']['uid_local']['config']['appearance']['fileUploadAllowed'] = 0;
 	}
 
@@ -243,5 +234,3 @@ class BackendLibrary {
 		return $baseFile;
 	}
 }
-
-?>
