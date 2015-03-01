@@ -29,12 +29,11 @@ $EM_CONF[$_EXTKEY] = array(
 	'clearCacheOnLoad' => 0,
 	'lockType' => '',
 	'author_company' => '',
-	'version' => '1.0.0',
+	'version' => '2.0.0',
 	'constraints' => array(
 		'depends' => array(
-			'php' => '5.3.0-0.0.0',
-			'typo3' => '6.0.0-6.2.99',
-			'templavoila' => '1.5.0-0.0.0',
+			'php' => '5.5.0-0.0.0',
+			'typo3' => '7.0.0-7.99.99',
 		),
 		'conflicts' => array(
 		),
