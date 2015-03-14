@@ -4,23 +4,41 @@ namespace BusyNoggin\BnBackend;
 
 class BackendLibrary {
 
+	public function postProcessTCA($tca) {
+		$tca = $this->removeExcludeFields($tca);
+		$tca = $this->removeInlineFileUpload($tca);
+
+		return array($tca);
+	}
+
 	/**
 	 * Removes all exclude fields as defined in the TCA. This does not currently handle FlexForm excludeFields (which are rare)
 	 *
+	 * @param array
 	 * @return void
 	 */
-	public static function removeExcludeFields() {
-		foreach ($GLOBALS['TCA'] as $tableName => &$tableConfiguration) {
+	public static function removeExcludeFields(array $tca) {
+		foreach ($tca as $tableName => &$tableConfiguration) {
 			foreach ($tableConfiguration['columns'] as $columnName => $columnConfiguration) {
 				if (array_key_exists('exclude', $columnConfiguration) && $columnConfiguration['exclude']) {
-					unset($GLOBALS['TCA'][$tableName]['columns'][$columnName]['exclude']);
+					unset($tca[$tableName]['columns'][$columnName]['exclude']);
 				}
 			}
 		}
+
+		return $tca;
 	}
 
-	public static function removeInlineFileUpload() {
-		$GLOBALS['TCA']['sys_file_reference']['columns']['uid_local']['config']['appearance']['fileUploadAllowed'] = 0;
+	/**
+	 * Removes the inline file upload capabilityl
+	 *
+	 * @param array
+	 * @return void
+	 */
+	public static function removeInlineFileUpload(array $tca) {
+		$tca['sys_file_reference']['columns']['uid_local']['config']['appearance']['fileUploadAllowed'] = 0;
+
+		return $tca;
 	}
 
 	/**
