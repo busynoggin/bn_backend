@@ -1,5 +1,0 @@
-# cat=basic//1; type=text; label=Configuration Base Path
-baseConfigurationPath = fileadmin/Configuration/Base/
-
-# cat=basic//2; type=text; label=Configuration Site Path
-siteConfigurationPath = fileadmin/Configuration/Site/

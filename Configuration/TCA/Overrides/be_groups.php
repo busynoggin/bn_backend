@@ -7,9 +7,11 @@ $staticTSConfigSelector = array(
 		'label' => 'LLL:EXT:bn_backend/locallang_db.xlf:be_groups.tx_bnbackend_tsconfig_files',
 		'config' => array(
 			'type' => 'select',
-			'size' => 5,
+			'size' => 10,
 			'maxitems' => 100,
-			'itemsProcFunc' => 'BusyNoggin\\BnBackend\\BackendLibrary->getStaticTSConfigItemsForGroup'
+			'enableMultiSelectFilterTextfield' => TRUE,
+			'items' => array(),
+			'softref' => 'ext_fileref'
 		)
 	),
 );

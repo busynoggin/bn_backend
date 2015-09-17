@@ -42,6 +42,22 @@ class BackendLibrary {
 	}
 
 	/**
+	 * Call this method to add an entry in the userTSconfig list found in be_groups
+	 *
+	 * @param string $extKey The extension key
+	 * @param string $file The path and title where the UserTSconfig file is located
+	 * @param string $title The title in the selector box
+	 * @return void
+	 */
+	static public function registerUserTSConfigFile($extKey, $file, $title) {
+		if ($extKey && $file && is_array($GLOBALS['TCA']['be_groups']['columns'])) {
+			$value = str_replace(',',  '', 'EXT:' . $extKey . '/' . $file);
+			$itemArray = array(trim($title . ' (' . $extKey . ')'), $value);
+			$GLOBALS['TCA']['be_groups']['columns']['tx_bnbackend_tsconfig_files']['config']['items'][] = $itemArray;
+		}
+	}
+
+	/**
 	 * Hooks into group handling to load TSConfig Static Templates.
 	 *
 	 * @param array $params
@@ -51,16 +67,6 @@ class BackendLibrary {
 	public static function includeStaticTSConfigForGroups($params, &$parentObject) {
 		$user = $parentObject->user;
 
-		/**
-		 * Force FlexForm fields to be allowed. t3lib_userauthgroup specifically mentions that dataLists is for
-		 * internal use only so this may be brittle. It shouldn't break anything else, but may not work forever.
-		 */
-		if ($parentObject->dataLists['non_exclude_fields']) {
-			$parentObject->dataLists['non_exclude_fields'] .= ',pages:tx_templavoila_flex';
-		} else {
-			$parentObject->dataLists['non_exclude_fields'] = 'pages:tx_templavoila_flex';
-		}
-
 		foreach ($parentObject->includeGroupArray as $groupId) {
 			$groupRow = $parentObject->userGroups[$groupId];
 			if ($groupRow['tx_bnbackend_tsconfig_files']) {
@@ -68,12 +74,6 @@ class BackendLibrary {
 
 				$staticTSConfigFiles = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $groupRow['tx_bnbackend_tsconfig_files']);
 				foreach((array) $staticTSConfigFiles as $staticTSConfigFile) {
-					// If we're including site config, include corresponding base config.
-					if (self::isPathWithinSiteStaticTSConfigPath($staticTSConfigFile) && self::hasBaseConfiguration($staticTSConfigFile)) {
-						$staticTSConfigFileFromBase = self::getBaseConfiguration($staticTSConfigFile);
-						$parentObject->TSdataArray[] = '<INCLUDE_TYPOSCRIPT: source="FILE:' . $staticTSConfigFileFromBase . '">';
-					}
-
 					$parentObject->TSdataArray[] = '<INCLUDE_TYPOSCRIPT: source="FILE:' . $staticTSConfigFile . '">';
 				}
 
@@ -82,173 +82,4 @@ class BackendLibrary {
 		}
 	}
 
-	/**
-	 * Builds the TCA items array, populated with TSconfig-based static templates.
-	 *
-	 * @param array $params
-	 * @param t3lib_tceforms $parentObject
-	 * @return array
-	 */
-	public static function getStaticTSConfigItemsForGroup(&$params, &$parentObject) {
-		if (!is_array($params['items'])) {
-			$params['items'] = array();
-		}
-
-		$baseItems = self::getStaticTSConfigItemsFromBase();
-		$siteItems = self::getStaticTSConfigItemsFromSite();
-		$mergedItems = $baseItems;
-		foreach ((array) $siteItems['items'] as $key => $item) {
-			$mergedItems['items'][] = $item;
-		}
-
-		usort($mergedItems['items'], function($a, $b) {
-			return $a[0] > $b[0];
-		});
-
-		$params['items'] = $mergedItems['items'];
-	}
-
-	/**
-	 * Gets the items array from the base configuration path.
-	 *
-	 * @return array
-	 */
-	protected static function getStaticTSConfigItemsFromBase() {
-		$basePath = self::getBaseStaticTSConfigPath();
-		return self::getStaticTSConfigItemsFromPath($basePath);
-	}
-
-	/**
-	 * Gets the items array from the site configuration path
-	 *
-	 * @return array
-	 */
-	protected static function getStaticTSConfigItemsFromSite() {
-		$sitePath = self::getSiteStaticTSConfigPath();
-		return self::getStaticTSConfigItemsFromPath($sitePath);
-	}
-
-	/**
-	 * Gets the items array from the specified path
-	 *
-	 * @param string $path
-	 * @return array
-	 */
-	protected static function getStaticTSConfigItemsFromPath($path) {
-		$configurationKey = 'Default';
-		$pathToTSConfigFiles = $path . $configurationKey . '/Configuration/UserTSConfig/';
-		$configurations = \TYPO3\CMS\Core\Utility\GeneralUtility::getFilesInDir(PATH_site . $pathToTSConfigFiles, 'ts');
-		foreach ((array) $configurations as $configurationFilename) {
-			$itemArray = self::addStaticTSConfigFromPath($pathToTSConfigFiles, $configurationFilename, $configurationKey);
-			if ($itemArray) {
-				$params['items'][] = $itemArray;
-			}
-		}
-
-		// Loop over all the folders within the configuration, typically extension-based names
-		$pathToExtensions = $path . 'Extensions/';
-		$configurationFolders = \TYPO3\CMS\Core\Utility\GeneralUtility::get_dirs(PATH_site . $pathToExtensions);
-		foreach ((array) $configurationFolders as $configurationFolderName) {
-			// Within a folder, look for /UserTSConfig/*.ts and add it as a static template.
-			$pathToTSConfigFiles = $pathToExtensions . $configurationFolderName . '/Configuration/UserTSConfig/';
-			$configurations = \TYPO3\CMS\Core\Utility\GeneralUtility::getFilesInDir(PATH_site . $pathToTSConfigFiles, 'ts');
-			foreach ((array) $configurations as $configurationFilename) {
-				$itemArray = self::addStaticTSConfigFromPath($pathToTSConfigFiles, $configurationFilename, $configurationFolderName);
-				if ($itemArray) {
-					$params['items'][] = $itemArray;
-				}
-			}
-		}
-
-		return $params;
-	}
-
-	/**
-	 * Creates an item array from the given path and filename
-	 *
-	 * @param string $path
-	 * @param string $filename
-	 * @param string $configurationKey
-	 * @return array
-	 */
-	protected static function addStaticTSConfigFromPath($path, $filename, $configurationKey) {
-			$info = pathinfo($filename);
-			$name = basename($filename,'.'.$info['extension']);
-			$name = $configurationKey . '/' . trim($name);
-
-			if (self::isPathWithinSiteStaticTSConfigPath($path)) {
-				$name .= ' (Site)';
-			} elseif (self::isPathWithinBaseStaticTSConfigPath($path)) {
-				$name .= ' (Base)';
-			}
-
-			$itemArray = array($name, $path . $filename);
-			return $itemArray;
-	}
-
-	/**
-	 * Gets the static TSConfig path
-	 *
-	 * @return string
-	 */
-	protected static function getSiteStaticTSConfigPath() {
-		$extConf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['bn_backend']);
-		return $extConf['siteConfigurationPath'];
-	}
-
-	/**
-	 * Checks if the given path is within the site static TSConfig path
-	 *
-	 * @param string $path
-	 * @return boolean
-	 */
-	protected static function isPathWithinSiteStaticTSConfigPath($path) {
-		$siteStaticTSConfigPath = self::getSiteStaticTSConfigPath();
-		return (strstr($path, $siteStaticTSConfigPath) !== FALSE);
-	}
-
-	/**
-	 * Gets the static TSConfig path
-	 *
-	 * @return string
-	 */
-	protected static function getBaseStaticTSConfigPath() {
-		$extConf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['bn_backend']);
-		return $extConf['baseConfigurationPath'];
-	}
-
-	/**
-	 * Checks if the given path is within the base static TSConfig path
-	 *
-	 * @param string $path
-	 * @return boolean
-	 */
-	protected static function isPathWithinBaseStaticTSConfigPath($path) {
-		$baseStaticTSConfigPath = self::getBaseStaticTSConfigPath();
-		return (strstr($path, $baseStaticTSConfigPath) !== FALSE);
-	}
-
-	/**
-	 * Checks if the given path has a corresponding base configuration.
-	 *
-	 * @param string $staticTSConfigFile
-	 * @return boolean
-	 */
-	protected static function hasBaseConfiguration($staticTSConfigFile) {
-		return @is_file(PATH_site . self::getBaseConfiguration($staticTSConfigFile));
-	}
-
-	/**
-	 * Gets the corresponding base configuration.
-	 *
-	 * @param string $staticTSConfigFile
-	 * @return boolean
-	 */
-	protected static function getBaseConfiguration($staticTSConfigFile) {
-		$siteStaticTSConfigPath = self::getSiteStaticTSConfigPath();
-		$baseStaticTSConfigPath = self::getBaseStaticTSConfigPath();
-
-		$baseFile = str_replace($siteStaticTSConfigPath, $baseStaticTSConfigPath, $staticTSConfigFile);
-		return $baseFile;
-	}
 }
