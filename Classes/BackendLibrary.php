@@ -19,9 +19,11 @@ class BackendLibrary {
 	 */
 	public static function removeExcludeFields(array $tca) {
 		foreach ($tca as $tableName => &$tableConfiguration) {
-			foreach ($tableConfiguration['columns'] as $columnName => $columnConfiguration) {
-				if (array_key_exists('exclude', $columnConfiguration) && $columnConfiguration['exclude']) {
-					unset($tca[$tableName]['columns'][$columnName]['exclude']);
+			if (is_array($tableConfiguration['columns'])) {
+				foreach ($tableConfiguration['columns'] as $columnName => $columnConfiguration) {
+					if (array_key_exists('exclude', $columnConfiguration) && $columnConfiguration['exclude']) {
+						unset($tca[$tableName]['columns'][$columnName]['exclude']);
+					}
 				}
 			}
 		}
