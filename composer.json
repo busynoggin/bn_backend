@@ -17,6 +17,5 @@
     "typo3/cms": {
       "extension-key": "bn_backend"
     }
-  },
-  "version": "2.0.0"
+  }
 }
